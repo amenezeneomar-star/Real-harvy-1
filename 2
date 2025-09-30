@@ -1,0 +1,39 @@
+const fetch = require("node-fetch");
+const authMiddleware = require("./authMiddleware");
+
+module.exports = async (req, res) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const { text } = req.body;
+      if (!text || text.length < 20) {
+        return res.status(400).json({ error: "Text too short" });
+      }
+
+      const payload = {
+        model: "mistralai/mistral-7b-instruct", // free AI model
+        messages: [
+          { role: "system", content: "You are a Legal Analysis assistant..." },
+          { role: "user", content: text }
+        ]
+      };
+
+      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!aiRes.ok) throw new Error("AI API error");
+      const data = await aiRes.json();
+      const analysisText = data.choices[0]?.message?.content || "No analysis generated.";
+
+      res.json({ analysis: analysisText });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Analysis failed" });
+    }
+  });
+};
