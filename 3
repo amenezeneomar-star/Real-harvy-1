@@ -1,0 +1,44 @@
+export async function analyzeText(text) {
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+  return res.json();
+}
+import React, { useState } from "react";
+import { analyzeText } from "../utils/api";
+
+export default function Home() {
+  const [text, setText] = useState("");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    const data = await analyzeText(text);
+    setResult(data.analysis);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>RealHarvy Contract Scout</h1>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        rows={12}
+        style={{ width: "100%" }}
+        placeholder="Paste your contract here..."
+      />
+      <button onClick={handleAnalyze} disabled={loading}>
+        {loading ? "Analyzing..." : "Analyze Contract"}
+      </button>
+      {result && (
+        <div style={{ marginTop: "2rem", whiteSpace: "pre-wrap" }}>
+          {result}
+        </div>
+      )}
+    </div>
+  );
+}
